@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L.I.S.A. — Advanced Interface System</title>
+<style>
+:root{
+  --cy:#00e5ff;
+  --cy-d:#0097a7;
+  --cy-l:#7ffcff;
+  --red:#ff3b5c;
+  --bg:#000508;
+  --glow:0 0 6px rgba(0,229,255,.9),0 0 18px rgba(0,229,255,.45);
+  --font:"Consolas","Share Tech Mono","Courier New",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:radial-gradient(ellipse at 50% 45%,#03222b 0%,#01090f 55%,#000306 100%);
+  color:var(--cy);font-family:var(--font);overflow:hidden;
+  text-shadow:0 0 5px rgba(0,229,255,.75);letter-spacing:.5px;
+}
+/* ---------- background layers ---------- */
+.grid{
+  position:fixed;inset:0;pointer-events:none;opacity:.16;
+  background-image:linear-gradient(rgba(0,229,255,.35) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,229,255,.35) 1px,transparent 1px);
+  background-size:60px 60px;
+  animation:drift 24s linear infinite;
+}
+@keyframes drift{to{background-position:60px 60px}}
+.vign{position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.85) 100%)}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.35;
+  background:repeating-linear-gradient(180deg,rgba(0,229,255,.05) 0 1px,transparent 1px 3px)}
+.sweep{position:fixed;left:0;right:0;height:120px;z-index:61;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(0,229,255,.07),transparent);
+  animation:sweep 7s linear infinite}
+@keyframes sweep{0%{top:-120px}100%{top:100%}}
+
+/* ---------- boot ---------- */
+#boot{position:fixed;inset:0;z-index:200;background:#000508;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .8s}
+#boot h1{font-size:64px;letter-spacing:22px;text-shadow:0 0 22px var(--cy)}
+#boot .bar{width:380px;height:4px;border:1px solid var(--cy-d);position:relative}
+#boot .bar i{position:absolute;inset:0;width:0;background:var(--cy);box-shadow:var(--glow)}
+#boot pre{font-size:11px;color:var(--cy-d);height:120px;overflow:hidden;text-align:left;width:380px}
+
+/* ---------- layout ---------- */
+.wrap{position:relative;z-index:5;height:100vh;display:flex;flex-direction:column;padding:6px 10px 8px}
+.daystrip{display:flex;justify-content:space-between;font-size:12px;color:var(--cy-d);
+  border-bottom:1px solid rgba(0,229,255,.25);padding-bottom:4px;margin-bottom:6px}
+.daystrip span{padding:1px 5px;transition:.3s}
+.daystrip span.on{color:#001014;background:var(--cy);box-shadow:var(--glow)}
+main{flex:1;display:grid;grid-template-columns:260px 1fr 270px;gap:12px;min-height:0}
+.col{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.panel{border:1px solid rgba(0,229,255,.3);padding:8px 10px;position:relative;
+  background:linear-gradient(180deg,rgba(0,229,255,.05),rgba(0,229,255,.01))}
+.panel::before,.panel::after{content:"";position:absolute;width:10px;height:10px;border:1px solid var(--cy)}
+.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.ttl{font-size:10px;color:var(--cy-d);letter-spacing:3px;margin-bottom:6px;text-transform:uppercase}
+.row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0}
+.dim{color:var(--cy-d)}
+.big{font-size:26px;font-weight:bold}
+
+/* ---------- rings ---------- */
+.ring{position:relative;display:grid;place-items:center}
+.ring svg{transform:rotate(-90deg);filter:drop-shadow(0 0 5px rgba(0,229,255,.8))}
+.ring .lbl{position:absolute;text-align:center;line-height:1.15}
+.ring .lbl b{display:block;font-size:20px}
+.ring .lbl small{font-size:9px;color:var(--cy-d);letter-spacing:2px}
+.track{stroke:rgba(0,229,255,.15);fill:none}
+.val{stroke:var(--cy);fill:none;stroke-linecap:round;transition:stroke-dashoffset .8s ease}
+.val.red{stroke:var(--red);filter:drop-shadow(0 0 6px var(--red))}
+
+/* ---------- center / reactor ---------- */
+.center{display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:0}
+.gauges{display:flex;gap:34px;align-items:center;justify-content:center;width:100%}
+.reactor{position:relative;width:340px;height:340px;display:grid;place-items:center;margin:4px 0}
+.reactor .r{position:absolute;border-radius:50%;border:1px solid rgba(0,229,255,.35)}
+.r1{inset:0;border-width:2px;border-style:dashed;animation:spin 26s linear infinite}
+.r2{inset:26px;border-top-color:transparent;border-bottom-color:transparent;border-width:3px;animation:spin 9s linear infinite reverse}
+.r3{inset:52px;border-left-color:var(--red);border-width:2px;animation:spin 14s linear infinite}
+.r4{inset:76px;border-style:dotted;animation:spin 18s linear infinite reverse}
+.r5{inset:100px;border-width:6px;border-color:rgba(0,229,255,.55);
+  box-shadow:0 0 25px rgba(0,229,255,.6),inset 0 0 25px rgba(0,229,255,.5)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.core{width:86px;height:86px;border-radius:50%;
+  background:radial-gradient(circle,#ffffff 0%,#9df6ff 18%,var(--cy) 45%,#0090b5 70%,#00394a 100%);
+  box-shadow:0 0 30px var(--cy),0 0 70px rgba(0,229,255,.7),inset 0 0 22px #fff;
+  animation:pulse 2.6s ease-in-out infinite;cursor:pointer}
+@keyframes pulse{50%{transform:scale(1.07);box-shadow:0 0 45px var(--cy),0 0 110px rgba(0,229,255,.85),inset 0 0 26px #fff}}
+.ticks{position:absolute;inset:8px;border-radius:50%;animation:spin 40s linear infinite reverse}
+.ticks i{position:absolute;left:50%;top:0;width:1px;height:12px;background:rgba(0,229,255,.7);transform-origin:50% 162px}
+
+.menu{position:absolute;font-size:12px;display:flex;flex-direction:column;gap:7px}
+.menu.l{left:-8px;top:40px}.menu.r{right:-8px;top:70px;text-align:right}
+.menu a{color:var(--cy);text-decoration:none;opacity:.8;transition:.25s;cursor:pointer;white-space:nowrap}
+.menu a::before{content:"◦ ";color:var(--cy-d)}
+.menu a:hover{opacity:1;text-shadow:0 0 12px var(--cy);transform:translateX(4px)}
+.brand{font-size:20px;letter-spacing:9px;color:rgba(0,229,255,.65)}
+.brand small{display:block;font-size:9px;letter-spacing:5px;color:var(--cy-d);text-align:center}
+
+/* ---------- weather / news ---------- */
+.wx{display:flex;align-items:center;gap:10px}
+.wx .t{font-size:44px;line-height:1}
+.fc{display:flex;justify-content:space-between;font-size:11px;padding:4px 0;
+  border-bottom:1px dashed rgba(0,229,255,.18)}
+.news{list-style:none;font-size:12px}
+.news li{padding:4px 0;border-bottom:1px dashed rgba(0,229,255,.18);cursor:pointer;transition:.2s}
+.news li:hover{padding-left:6px;color:#fff}
+.scrollable{overflow-y:auto;flex:1}
+.scrollable::-webkit-scrollbar{width:4px}
+.scrollable::-webkit-scrollbar-thumb{background:var(--cy-d)}
+
+/* ---------- footer ---------- */
+footer{display:grid;grid-template-columns:260px 1fr 270px;gap:12px;margin-top:8px;height:120px}
+canvas{width:100%;display:block}
+.player{display:flex;align-items:center;gap:10px;font-size:11px}
+.player button{background:none;border:1px solid var(--cy-d);color:var(--cy);width:26px;height:22px;
+  cursor:pointer;font-size:11px;transition:.2s}
+.player button:hover{background:var(--cy);color:#001014;box-shadow:var(--glow)}
+.log{font-size:10px;color:var(--cy-d);height:52px;overflow:hidden;line-height:1.5}
+.log b{color:var(--cy)}
+.pwr{display:flex;gap:14px;font-size:12px;cursor:pointer}
+.pwr div:hover{color:#fff;text-shadow:0 0 12px var(--cy)}
+.mic{margin-left:auto;border:1px solid var(--cy-d);padding:2px 8px;font-size:10px;cursor:pointer}
+.mic.live{background:var(--red);color:#fff;border-color:var(--red);animation:pulse 1.2s infinite}
+@media(max-width:1100px){main,footer{grid-template-columns:1fr}.col,footer>*:not(:first-child){display:none}}
+</style>
+</head>
+<body>
+
+<div class="grid"></div><div class="vign"></div><div class="scan"></div><div class="sweep"></div>
+
+<!-- ===== BOOT ===== -->
+<div id="boot">
+  <h1>LISA</h1>
+  <div class="bar"><i id="bbar"></i></div>
+  <pre id="blog"></pre>
+</div>
+
+<div class="wrap">
+  <!-- ===== DAY STRIP ===== -->
+  <div class="daystrip" id="daystrip"></div>
+
+  <main>
+    <!-- ================= LEFT ================= -->
+    <div class="col">
+      <div class="panel" style="display:flex;gap:12px;align-items:center">
+        <div class="ring">
+          <svg width="104" height="104" viewBox="0 0 104 104">
+            <circle class="track" cx="52" cy="52" r="45" stroke-width="3"/>
+            <circle class="val" id="dayRing" cx="52" cy="52" r="45" stroke-width="4"/>
+          </svg>
+          <div class="lbl"><small id="monthTxt">JUNE</small><b id="dayTxt">21</b></div>
+        </div>
+        <div>
+          <div class="dim" style="font-size:10px" id="weekday">THURSDAY</div>
+          <div class="big" id="clock">00:00</div>
+          <div class="dim" style="font-size:11px" id="secs">:00</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ttl">Storage / Drive C</div>
+        <div class="row"><span class="dim">Total</span><span>512 GB</span></div>
+        <div class="row"><span class="dim">Free</span><span id="freeTxt">128 GB</span></div>
+        <div class="row"><span class="dim">Health</span><span>OPTIMAL</span></div>
+        <svg width="100%" height="8" style="margin-top:5px">
+          <rect width="100%" height="8" fill="rgba(0,229,255,.12)"/>
+          <rect id="diskBar" width="75%" height="8" fill="#00e5ff"/>
+        </svg>
+      </div>
+
+      <div class="panel" style="display:flex;gap:12px;align-items:center">
+        <div class="ring">
+          <svg width="92" height="92" viewBox="0 0 104 104">
+            <circle class="track" cx="52" cy="52" r="45" stroke-width="3"/>
+            <circle class="val" id="pwrRing" cx="52" cy="52" r="45" stroke-width="5"/>
+          </svg>
+          <div class="lbl"><b id="pwrTxt">100%</b><small>POWER</small></div>
+        </div>
+        <div style="font-size:11px">
+          <div class="row"><span class="dim">Mode</span><span>HIGH</span></div>
+          <div class="row"><span class="dim">Temp</span><span id="tempC">41°C</span></div>
+          <div class="row"><span class="dim">Fan</span><span id="fanTxt">1480 RPM</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ttl">System</div>
+        <div class="row"><span class="dim">Uptime</span><span id="uptime">0d 0h 0m</span></div>
+        <div class="row"><span class="dim">Recycle bin</span><span>0 files</span></div>
+        <div class="row"><span class="dim">Messages</span><span id="mail">3 new</span></div>
+        <div class="row"><span class="dim">Node IP</span><span>91.219.164.5</span></div>
+      </div>
+
+      <div class="panel" style="margin-top:auto">
+        <div class="ttl">Command Log</div>
+        <div class="log" id="log"></div>
+      </div>
+
+      <div class="panel pwr">
+        <div onclick="lisa.say('Shutdown sequence locked.')">⏻ SHUTDOWN</div>
+        <div onclick="location.reload()">⟳ RESTART</div>
+      </div>
+    </div>
+
+    <!-- ================= CENTER ================= -->
+    <div class="center">
+      <div class="gauges">
+        <div class="ring">
+          <svg width="112" height="112" viewBox="0 0 104 104">
+            <circle class="track" cx="52" cy="52" r="45" stroke-width="3"/>
+            <circle class="val" id="ramRing" cx="52" cy="52" r="45" stroke-width="6"/>
+          </svg>
+          <div class="lbl"><small>RAM</small><b id="ramTxt">42</b><small>SWAP 12</small></div>
+        </div>
+
+        <div class="ring">
+          <svg width="150" height="150" viewBox="0 0 104 104">
+            <circle class="track" cx="52" cy="52" r="45" stroke-width="2"/>
+            <circle class="val" id="netRing" cx="52" cy="52" r="45" stroke-width="4"/>
+          </svg>
+          <div class="lbl"><small>UPLINK</small><b id="netTxt">98%</b><small>SECURE</small></div>
+        </div>
+
+        <div class="ring">
+          <svg width="112" height="112" viewBox="0 0 104 104">
+            <circle class="track" cx="52" cy="52" r="45" stroke-width="3"/>
+            <circle class="val" id="cpuRing" cx="52" cy="52" r="45" stroke-width="6"/>
+          </svg>
+          <div class="lbl"><small>CPU</small><b id="cpuTxt">17</b><small id="coreTxt">8 CORES</small></div>
+        </div>
+      </div>
+
+      <div class="reactor">
+        <div class="r r1"></div><div class="r r2"></div><div class="r r3"></div>
+        <div class="r r4"></div><div class="r r5"></div>
+        <div class="ticks" id="ticks"></div>
+        <div class="core" id="core" title="Tap to speak"></div>
+
+        <div class="menu l">
+          <a onclick="lisa.run('Neural Engine')">Neural Engine</a>
+          <a onclick="lisa.run('Vision Module')">Vision Module</a>
+          <a onclick="lisa.run('Security Grid')">Security Grid</a>
+          <a onclick="lisa.run('Drone Link')">Drone Link</a>
+          <a onclick="lisa.run('Diagnostics')">Diagnostics</a>
+        </div>
+        <div class="menu r">
+          <a onclick="lisa.run('Home Automation')">Home Automation</a>
+          <a onclick="lisa.run('Database')">Database</a>
+          <a onclick="lisa.run('Encryption')">Encryption</a>
+          <a onclick="lisa.run('Satellite Feed')">Satellite Feed</a>
+        </div>
+      </div>
+
+      <div class="brand">L · I · S · A<small>LOGICAL INTERACTIVE SYSTEM ASSISTANT</small></div>
+
+      <div class="panel" style="width:100%;display:flex;align-items:center;gap:10px">
+        <span class="dim" style="font-size:10px">STATUS</span>
+        <span id="status" style="font-size:12px">All systems nominal — awaiting command</span>
+        <span class="mic" id="mic">🎙 VOICE</span>
+      </div>
+    </div>
+
+    <!-- ================= RIGHT ================= -->
+    <div class="col">
+      <div class="panel">
+        <div class="row"><b id="loc">Mumbai, India</b></div>
+        <div class="dim" style="font-size:10px" id="updated">Updated —</div>
+        <div class="wx" style="margin-top:6px">
+          <div class="t" id="wxT">31°</div>
+          <div style="font-size:11px">
+            <div id="wxC">Clear</div>
+            <div class="dim">Humidity <span id="wxH">64%</span></div>
+            <div class="dim">Wind <span id="wxW">12 km/h</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ttl">5-Day Forecast</div>
+        <div id="forecast"></div>
+      </div>
+
+      <div class="panel scrollable">
+        <div class="ttl">Intel Feed</div>
+        <ul class="news" id="news"></ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer>
+    <div class="panel">
+      <div class="ttl">Audio Spectrum</div>
+      <canvas id="viz" height="70"></canvas>
+    </div>
+
+    <div class="panel">
+      <div class="ttl">Network Throughput</div>
+      <canvas id="net" height="70"></canvas>
+      <div class="row" style="font-size:10px">
+        <span class="dim">DOWN <b id="dn">0.0 Mb/s</b></span>
+        <span class="dim">UP <b id="up">0.0 Mb/s</b></span>
+        <span class="dim">PING <b id="pg">12 ms</b></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ttl">Media</div>
+      <div class="player">
+        <button onclick="lisa.say('Playback engaged')">▶</button>
+        <button onclick="lisa.say('Paused')">❚❚</button>
+        <button onclick="lisa.say('Next track')">⏭</button>
+        <span id="track">Ambient — Protocol 07</span>
+      </div>
+      <svg width="100%" height="6" style="margin-top:8px">
+        <rect width="100%" height="6" fill="rgba(0,229,255,.12)"/>
+        <rect id="seek" width="0%" height="6" fill="#00e5ff"/>
+      </svg>
+    </div>
+  </footer>
+</div>
+
+<script>
+/* ============ HELPERS ============ */
+const $=s=>document.querySelector(s), C=2*Math.PI*45;
+const setRing=(el,p)=>{el.style.strokeDasharray=C;el.style.strokeDashoffset=C-(C*Math.min(p,100)/100);
+  el.classList.toggle('red',p>85);};
+const rnd=(a,b)=>Math.random()*(b-a)+a;
+
+/* ============ LISA CORE ============ */
+const lisa={
+  logs:[],
+  log(m){this.logs.unshift(`<b>›</b> ${m}`);this.logs=this.logs.slice(0,4);$('#log').innerHTML=this.logs.join('<br>');},
+  say(m){
+    $('#status').textContent=m; this.log(m);
+    if('speechSynthesis'in window){
+      const u=new SpeechSynthesisUtterance(m);
+      u.rate=1.02;u.pitch=1.25;
+      const v=speechSynthesis.getVoices().find(x=>/female|zira|samantha|google uk english female/i.test(x.name));
+      if(v)u.voice=v;
+      speechSynthesis.speak(u);
+    }
+  },
+  run(mod){this.say(`${mod} module online.`);},
+  ask(q){
+    q=q.toLowerCase();
+    if(q.includes('time'))return this.say('The time is '+new Date().toLocaleTimeString());
+    if(q.includes('date'))return this.say('Today is '+new Date().toDateString());
+    if(q.includes('status')||q.includes('report'))return this.say('All systems nominal. CPU at '+$('#cpuTxt').textContent+' percent.');
+    if(q.includes('weather'))return this.say('Currently '+$('#wxT').textContent+' and '+$('#wxC').textContent);
+    if(q.includes('hello')||q.includes('hi lisa'))return this.say('Hello. Lisa at your service.');
+    if(q.includes('open'))return this.say('Opening '+q.replace('open','').trim());
+    this.say('Command received: '+q);
+  }
+};
+
+/* ============ BOOT SEQUENCE ============ */
+const bootLines=['INITIALIZING KERNEL...','MOUNTING NEURAL CORE...','ARC POWER: STABLE',
+'LOADING VISION MODULE...','ENCRYPTION AES-256 : OK','UPLINK HANDSHAKE COMPLETE',
+'CALIBRATING SENSORS...','L.I.S.A. ONLINE'];
+let bi=0;
+const bt=setInterval(()=>{
+  $('#blog').textContent+=bootLines[bi]+'\n';
+  $('#bbar').style.width=((bi+1)/bootLines.length*100)+'%';
+  if(++bi>=bootLines.length){
+    clearInterval(bt);
+    setTimeout(()=>{$('#boot').style.opacity=0;setTimeout(()=>$('#boot').remove(),800);
+      lisa.say('Lisa online. Good to see you again.');},600);
+  }
+},320);
+
+/* ============ DAY STRIP + CLOCK ============ */
+(function(){
+  const d=new Date(), dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(), s=$('#daystrip');
+  for(let i=1;i<=dim;i++){
+    const e=document.createElement('span');
+    e.textContent=String(i).padStart(2,'0');
+    if(i===d.getDate())e.className='on';
+    s.appendChild(e);
+  }
+  setRing($('#dayRing'),d.getDate()/dim*100);
+  $('#dayTxt').textContent=d.getDate();
+  $('#monthTxt').textContent=d.toLocaleString('en',{month:'long'}).toUpperCase();
+})();
+
+const start=Date.now();
+setInterval(()=>{
+  const n=new Date();
+  $('#clock').textContent=n.toTimeString().slice(0,5);
+  $('#secs').textContent=':'+n.toTimeString().slice(6,8);
+  $('#weekday').textContent=n.toLocaleString('en',{weekday:'long'}).toUpperCase();
+  const s=Math.floor((Date.now()-start)/1000);
+  $('#uptime').textContent=`${Math.floor(s/86400)}d ${Math.floor(s/3600)%24}h ${Math.floor(s/60)%60}m`;
+  $('#seek').style.width=(s%180/180*100)+'%';
+},1000);
+
+/* ============ REACTOR TICKS ============ */
+const tk=$('#ticks');
+for(let i=0;i<72;i++){
+  const t=document.createElement('i');
+  t.style.transform=`rotate(${i*5}deg)`;
+  t.style.opacity=i%6===0?1:.35;
+  tk.appendChild(t);
+}
+$('#core').onclick=()=>startVoice();
+
+/* ============ LIVE TELEMETRY ============ */
+let cpu=18,ram=42,pw=100;
+setInterval(()=>{
+  cpu=Math.max(4,Math.min(96,cpu+rnd(-9,9)));
+  ram=Math.max(20,Math.min(92,ram+rnd(-5,5)));
+  pw=Math.max(72,pw-0.02);
+  setRing($('#cpuRing'),cpu); $('#cpuTxt').textContent=cpu.toFixed(0);
+  setRing($('#ramRing'),ram); $('#ramTxt').textContent=ram.toFixed(0);
+  setRing($('#pwrRing'),pw);  $('#pwrTxt').textContent=pw.toFixed(0)+'%';
+  setRing($('#netRing'),rnd(88,100));
+  $('#netTxt').textContent=rnd(88,100).toFixed(0)+'%';
+  $('#tempC').textContent=(35+cpu*0.25).toFixed(0)+'°C';
+  $('#fanTxt').textContent=(900+cpu*14).toFixed(0)+' RPM';
+  $('#pg').textContent=rnd(8,40).toFixed(0)+' ms';
+},1400);
+
+/* ============ WEATHER (auto by location, fallback demo) ============ */
+const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function paintForecast(max,min,txt){
+  $('#forecast').innerHTML='';
+  for(let i=1;i<=5;i++){
+    const d=new Date();d.setDate(d.getDate()+i);
+    const el=document.createElement('div');el.className='fc';
+    el.innerHTML=`<span>${days[d.getDay()]} ${d.getDate()}</span>
+      <span class="dim">${txt[i%txt.length]}</span>
+      <span>${(max[i]||30).toFixed(0)}° / ${(min[i]||22).toFixed(0)}°</span>`;
+    $('#forecast').appendChild(el);
+  }
+}
+$('#updated').textContent='Updated '+new Date().toLocaleTimeString();
+paintForecast([0,32,31,33,30,29],[0,25,24,26,24,23],['Clear','Cloudy','Rain','Haze','Sunny']);
+
+navigator.geolocation?.getCurrentPosition(async p=>{
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`);
+    const j=await r.json();
+    $('#wxT').textContent=Math.round(j.current.temperature_2m)+'°';
+    $('#wxH').textContent=j.current.relative_humidity_2m+'%';
+    $('#wxW').textContent=j.current.wind_speed_10m+' km/h';
+    $('#loc').textContent=p.coords.latitude.toFixed(2)+', '+p.coords.longitude.toFixed(2);
+    paintForecast(j.daily.temperature_2m_max,j.daily.temperature_2m_min,['Clear','Cloudy','Rain','Haze','Sunny']);
+  }catch(e){}
+},()=>{});
+
+/* ============ NEWS FEED ============ */
+const feed=['Quantum uplink stabilized at node 7','Perimeter drones returned to dock',
+'Firmware patch 4.2.1 deployed','Cold storage backup verified','Anomaly in sector 12 resolved',
+'Voice model retrained — accuracy 99.2%','Solar array output at 94%'];
+$('#news').innerHTML=feed.map(f=>`<li onclick="lisa.say('${f}')">${f}</li>`).join('');
+
+/* ============ NETWORK GRAPH ============ */
+const nc=$('#net'),nx=nc.getContext('2d');let data=Array(120).fill(0);
+function drawNet(){
+  nc.width=nc.offsetWidth;
+  data.push(rnd(5,nc.height-10));data.shift();
+  nx.clearRect(0,0,nc.width,nc.height);
+  nx.strokeStyle='#00e5ff';nx.lineWidth=1;nx.shadowBlur=8;nx.shadowColor='#00e5ff';
+  nx.beginPath();
+  data.forEach((v,i)=>{const x=i/data.length*nc.width;i?nx.lineTo(x,nc.height-v):nx.moveTo(x,nc.height-v);});
+  nx.stroke();
+  nx.lineTo(nc.width,nc.height);nx.lineTo(0,nc.height);nx.closePath();
+  nx.fillStyle='rgba(0,229,255,.12)';nx.fill();
+  $('#dn').textContent=(data[119]/8).toFixed(1)+' Mb/s';
+  $('#up').textContent=(data[119]/22).toFixed(1)+' Mb/s';
+}
+setInterval(drawNet,180);
+
+/* ============ AUDIO VISUALIZER ============ */
+const vc=$('#viz'),vx=vc.getContext('2d');let ph=0;
+(function viz(){
+  vc.width=vc.offsetWidth;
+  vx.clearRect(0,0,vc.width,vc.height);ph+=0.12;
+  const bars=48,w=vc.width/bars;
+  for(let i=0;i<bars;i++){
+    const h=(Math.sin(ph+i*0.4)*0.5+0.5)*vc.height*rnd(.4,1);
+    vx.fillStyle='rgba(0,229,255,'+(0.35+h/vc.height*0.65)+')';
+    vx.fillRect(i*w,vc.height-h,w-2,h);
+  }
+  requestAnimationFrame(viz);
+})();
+
+/* ============ VOICE RECOGNITION ============ */
+let rec=null;
+function startVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){return lisa.say('Voice input not supported in this browser.');}
+  if(!rec){
+    rec=new SR();rec.lang='en-US';rec.continuous=false;rec.interimResults=false;
+    rec.onstart=()=>{$('#mic').classList.add('live');$('#status').textContent='Listening…';};
+    rec.onend=()=>$('#mic').classList.remove('live');
+    rec.onresult=e=>lisa.ask(e.results[0][0].transcript);
+    rec.onerror=()=>lisa.say('I did not catch that.');
+  }
+  try{rec.start();}catch(e){}
+}
+$('#mic').onclick=startVoice;
+
+/* keyboard: press L to talk */
+addEventListener('keydown',e=>{if(e.key.toLowerCase()==='l')startVoice();});
+</script>
+</body>
+</html>
